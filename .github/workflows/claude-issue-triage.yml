@@ -1,0 +1,46 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Analiza el issue #${{ github.event.issue.number }} de este repositorio (título y
+            cuerpo) y realiza dos acciones:
+
+            1. Etiquetas: revisa las labels existentes en el repo con `gh label list`. Asigna al
+               issue las labels que correspondan (tipo de problema: bug, enhancement, question,
+               documentation, etc.; y prioridad/área si aplica) usando
+               `gh issue edit ${{ github.event.issue.number }} --add-label "..."`.
+               Si el issue necesita una categoría que no existe todavía como label, créala primero
+               con `gh label create` (color y descripción breves) y luego asígnala. No elimines
+               labels que ya tenga el issue salvo que sean claramente incorrectas.
+
+            2. Diagnóstico: publica un comentario en el issue con
+               `gh issue comment ${{ github.event.issue.number }} --body "..."` que incluya:
+               - Resumen del problema en 1-2 líneas.
+               - Diagnóstico general: causa probable o área del código afectada (revisa el
+                 repositorio si es necesario).
+               - Alcance / impacto estimado.
+               - Sugerencia de enfoque para la solución (sin implementarla todavía).
+
+            No hagas cambios de código ni abras pull requests, solo etiqueta y comenta.
+          claude_args: '--allowedTools "Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*),Bash(gh label create:*)"'
