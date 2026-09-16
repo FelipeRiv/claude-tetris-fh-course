@@ -42,5 +42,10 @@ jobs:
                - Alcance / impacto estimado.
                - Sugerencia de enfoque para la solución (sin implementarla todavía).
 
+               El comentario debe estar escrito en formato Markdown compatible con GitHub
+               (encabezados con `##`, listas con `-`, texto en **negrita**, bloques de código
+               con \`\`\` cuando corresponda, etc.) para que se renderice correctamente en la
+               interfaz de GitHub.
+
             No hagas cambios de código ni abras pull requests, solo etiqueta y comenta.
           claude_args: '--allowedTools "Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*),Bash(gh label create:*)"'
