@@ -4,6 +4,9 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK = 30;
 
+// Celda "fantasma" de la tuerca: se ve hueca, pero cuenta como ocupada.
+const NUT_HOLE = 9;
+
 const COLORS = [
   null,
   '#4dd0e1', // I - cyan
@@ -13,6 +16,8 @@ const COLORS = [
   '#e57373', // Z - red
   '#90caf9', // J - pale blue
   '#ffb74d', // L - orange
+  '#c97b3c', // Tuerca - óxido
+  '#c97b3c', // Tuerca - celda del agujero (mismo metal, el círculo se dibuja encima)
 ];
 
 const PIECES = [
@@ -24,13 +29,14 @@ const PIECES = [
   [[5,5,0],[0,5,5],[0,0,0]],                  // Z
   [[6,0,0],[6,6,6],[0,0,0]],                  // J
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
+  [[8,8,8],[8,NUT_HOLE,8],[8,8,8]],           // Tuerca - 3x3 con agujero central
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
 const THEME_COLORS = {
-  dark: { grid: '#22222e', highlight: 'rgba(255,255,255,0.12)' },
-  light: { grid: '#dcdce8', highlight: 'rgba(0,0,0,0.15)' },
+  dark: { grid: '#22222e', highlight: 'rgba(255,255,255,0.12)', hole: '#1a1a25', holeRing: 'rgba(0,0,0,0.45)' },
+  light: { grid: '#dcdce8', highlight: 'rgba(0,0,0,0.15)', hole: '#ffffff', holeRing: 'rgba(0,0,0,0.25)' },
 };
 
 const THEME_STORAGE_KEY = 'tetris-theme';
@@ -74,7 +80,7 @@ function createBoard() {
 }
 
 function randomPiece() {
-  const type = Math.floor(Math.random() * 7) + 1;
+  const type = Math.floor(Math.random() * (PIECES.length - 1)) + 1;
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
 }
@@ -192,7 +198,18 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   // highlight
   context.fillStyle = THEME_COLORS[theme].highlight;
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  if (colorIndex === NUT_HOLE) drawHole(context, x, y, size);
   context.globalAlpha = 1;
+}
+
+function drawHole(context, x, y, size) {
+  context.beginPath();
+  context.arc(x * size + size / 2, y * size + size / 2, size * 0.3, 0, Math.PI * 2);
+  context.fillStyle = THEME_COLORS[theme].hole;
+  context.fill();
+  context.strokeStyle = THEME_COLORS[theme].holeRing;
+  context.lineWidth = 2;
+  context.stroke();
 }
 
 function drawGrid() {
@@ -238,8 +255,8 @@ function drawNext() {
   const NB = 30;
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
   const shape = next.shape;
-  const offX = Math.floor((4 - shape[0].length) / 2);
-  const offY = Math.floor((4 - shape.length) / 2);
+  const offX = (4 - shape[0].length) / 2;
+  const offY = (4 - shape.length) / 2;
   for (let r = 0; r < shape.length; r++)
     for (let c = 0; c < shape[r].length; c++)
       drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);

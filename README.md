@@ -35,6 +35,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 
 - Tablero de **10 × 20** celdas.
 - Las **7 piezas estándar** (I, O, T, S, Z, J, L) con colores diferenciados.
+- Una **pieza extra de reto: la tuerca** — un bloque 3×3 con un agujero en el centro.
 - **Rotación** con _wall kicks_ básicos (pequeños desplazamientos para que la pieza pueda rotar pegada a la pared).
 - **Soft drop** (bajada acelerada) y **hard drop** (caída instantánea).
 - **Pieza fantasma** (_ghost piece_): muestra dónde aterrizará la pieza actual.
@@ -108,7 +109,7 @@ Aporta el aspecto visual con estética _dark / retro arcade_: fondo oscuro, tipo
 
 Contiene toda la lógica del juego. A grandes rasgos:
 
-- **Modelo del tablero**: una matriz `ROWS × COLS` donde cada celda guarda `0` (vacía) o un índice de color (1–7) que identifica la pieza.
+- **Modelo del tablero**: una matriz `ROWS × COLS` donde cada celda guarda `0` (vacía) o un índice de color (1–9) que identifica la pieza. El índice `9` (`NUT_HOLE`) es un caso especial: es el agujero de la tuerca, que se dibuja hueco pero cuenta como celda ocupada.
 - **Piezas**: definidas como matrices cuadradas. Para rotar se calcula la transposición + reverso de filas (`rotateCW`).
 - **Detección de colisiones** (`collide`): comprueba que ninguna celda de la pieza salga del tablero ni se solape con bloques ya fijados.
 - **Wall kicks** (`tryRotate`): si la rotación choca, intenta desplazar la pieza ±1 y ±2 columnas antes de descartar el giro.
@@ -117,6 +118,27 @@ Contiene toda la lógica del juego. A grandes rasgos:
 - **Puntuación**: usa la tabla clásica `[0, 100, 300, 500, 800]` multiplicada por el nivel actual; el hard drop suma 2 puntos por celda recorrida y el soft drop 1 punto por fila.
 - **Nivel y velocidad**: el nivel sube cada 10 líneas; la velocidad de caída se calcula como `max(100, 1000 − (level − 1) × 90)` milisegundos.
 - **Ghost piece** (`ghostY`): proyecta la posición final de la pieza actual hacia abajo y la dibuja con `globalAlpha = 0.2`.
+
+#### La pieza tuerca
+
+Además de las 7 piezas clásicas hay una octava, `PIECES[8]`, pensada como reto:
+
+```js
+[[8,8,8],[8,NUT_HOLE,8],[8,8,8]]   // tuerca 3×3
+```
+
+Sale con la misma probabilidad que las demás (1 de cada 8) y se dibuja en naranja óxido con un
+círculo hueco en el centro (`drawHole`), que se adapta al tema claro/oscuro.
+
+**Por qué el centro es `NUT_HOLE` (9) y no `0`:** los cuatro lados del agujero están tapiados por
+los propios bloques de la tuerca, así que ninguna pieza podría caer ni deslizarse dentro nunca.
+Como `clearLines()` exige que todas las celdas de la fila sean distintas de `0`, un agujero real
+dejaría esa fila **imposible de limpiar para siempre** y cada tuerca garantizaría el game over.
+
+Con el valor `9` el agujero es *fantasma*: se ve hueco, pero al ser un valor no nulo cuenta como
+ocupado para `clearLines()` y la fila sí se puede completar. En la práctica la tuerca se comporta
+como un bloque **sólido de 3×3** —la pieza más voluminosa del juego, difícil de encajar— pero que
+parece tener un hueco. El reto es visual y espacial, sin romper la jugabilidad.
 
 ### Flujo del juego
 
@@ -173,7 +195,7 @@ Algunos parámetros fáciles de tunear en `game.js`:
 | `COLS`         | Columnas del tablero                     | `10`                  |
 | `ROWS`         | Filas del tablero                        | `20`                  |
 | `BLOCK`        | Tamaño en píxeles de cada celda          | `30`                  |
-| `COLORS`       | Paleta de colores por tipo de pieza      | 7 colores             |
+| `COLORS`       | Paleta de colores por tipo de pieza      | 8 colores + agujero   |
 | `LINE_SCORES`  | Puntos por 1, 2, 3 o 4 líneas eliminadas | `[0,100,300,500,800]` |
 | `dropInterval` | Velocidad inicial de caída en ms         | `1000`                |
 
